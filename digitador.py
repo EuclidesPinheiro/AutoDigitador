@@ -8,10 +8,28 @@ import threading
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-DELAY = 5       # segundos de espera antes de digitar
+DELAY = 5         # segundos de espera antes de digitar
 INTERVALO = 0.03  # intervalo entre caracteres em segundos
 
 cancelar_evento = threading.Event()
+
+
+def formatar_tempo(segundos):
+    s = int(segundos)
+    m = s // 60
+    s = s % 60
+    return f"{m:02d}:{s:02d}"
+
+
+def fmt_num(n):
+    """Formata número com separador de milhar em PT-BR."""
+    return f"{n:,}".replace(",", ".")
+
+
+def resetar_metricas():
+    for lbl in (lbl_chars_val, lbl_linhas_val, lbl_palavras_val,
+                lbl_decorrido_val, lbl_restante_val, lbl_velocidade_val):
+        lbl.configure(text="—")
 
 
 def iniciar_digitacao():
@@ -24,8 +42,9 @@ def iniciar_digitacao():
     cancelar_evento.clear()
     botao_iniciar.configure(state="disabled")
     botao_cancelar.configure(state="normal")
-    text_box.configure(state="disabled")   # bloqueia edição do campo durante a digitação
+    text_box.configure(state="disabled")
     progress_bar.set(0)
+    resetar_metricas()
     atualizar_status("aguardando")
 
     def digitar():
@@ -47,25 +66,70 @@ def iniciar_digitacao():
             progress_bar.set(0)
             status_label.configure(text="Digitando...")
 
-            total = len(texto)
+            total          = len(texto)
+            total_linhas   = texto.count('\n') + 1
+            total_palavras = len(texto.split())
+
+            linhas_digitadas  = 1
+            palavras_digitadas = 0
+            em_palavra        = False
+            start_time        = time.time()
+            ultima_atualizacao = 0.0
+
             for idx, char in enumerate(texto):
                 if cancelar_evento.is_set():
                     atualizar_status("cancelado")
                     return
 
+                # --- Envia tecla ---
                 if char == '\n':
+                    linhas_digitadas += 1
+                    if em_palavra:
+                        palavras_digitadas += 1
+                        em_palavra = False
                     keyboard.send('enter')
-                    time.sleep(0.05)        # aguarda o auto-indent da aplicação destino
-                    keyboard.send('home')   # vai ao início da linha
-                    keyboard.send('shift+end')  # seleciona o auto-indent
-                    keyboard.send('delete')     # apaga
-                elif char == '\t':
-                    keyboard.send('tab')
+                    time.sleep(0.05)
+                    keyboard.send('home')
+                    keyboard.send('shift+end')
+                    keyboard.send('delete')
+                elif char in (' ', '\t'):
+                    if em_palavra:
+                        palavras_digitadas += 1
+                        em_palavra = False
+                    keyboard.send('tab') if char == '\t' else keyboard.write(char)
                 else:
+                    em_palavra = True
                     keyboard.write(char)
 
                 time.sleep(INTERVALO)
                 progress_bar.set((idx + 1) / total)
+
+                # --- Atualiza métricas a cada 100ms ---
+                agora = time.time()
+                if agora - ultima_atualizacao >= 0.1:
+                    elapsed   = agora - start_time
+                    remaining = (total - idx - 1) * INTERVALO
+                    speed     = (idx + 1) / elapsed * 60 if elapsed > 0.1 else 0
+
+                    lbl_chars_val.configure(text=f"{fmt_num(idx + 1)} / {fmt_num(total)}")
+                    lbl_linhas_val.configure(text=f"{linhas_digitadas} / {total_linhas}")
+                    lbl_palavras_val.configure(text=f"{palavras_digitadas} / {total_palavras}")
+                    lbl_decorrido_val.configure(text=formatar_tempo(elapsed))
+                    lbl_restante_val.configure(text=f"~{formatar_tempo(remaining)}")
+                    lbl_velocidade_val.configure(text=f"{fmt_num(int(speed))}/min")
+                    ultima_atualizacao = agora
+
+            # Conta última palavra se texto não terminar com espaço
+            if em_palavra:
+                palavras_digitadas += 1
+
+            elapsed = time.time() - start_time
+            lbl_chars_val.configure(text=f"{fmt_num(total)} / {fmt_num(total)}")
+            lbl_linhas_val.configure(text=f"{total_linhas} / {total_linhas}")
+            lbl_palavras_val.configure(text=f"{total_palavras} / {total_palavras}")
+            lbl_decorrido_val.configure(text=formatar_tempo(elapsed))
+            lbl_restante_val.configure(text="00:00")
+            lbl_velocidade_val.configure(text=f"{fmt_num(int(total / elapsed * 60))}/min")
 
             progress_bar.set(1.0)
             atualizar_status("concluido")
@@ -75,7 +139,7 @@ def iniciar_digitacao():
             atualizar_status("erro")
 
         finally:
-            text_box.configure(state="normal")     # reabilita o campo de texto
+            text_box.configure(state="normal")
             botao_iniciar.configure(state="normal")
             botao_cancelar.configure(state="disabled")
 
@@ -107,6 +171,7 @@ def selecionar_tudo(event):
 def limpar_texto():
     text_box.delete("1.0", "end")
     progress_bar.set(0)
+    resetar_metricas()
     atualizar_status("aguardando")
 
 
@@ -120,13 +185,15 @@ def alternar_tema():
         tema_btn.configure(text="☾ Tema Escuro", text_color="#1a1a1a")
 
 
+# ============================================================
 # --- Interface ---
+# ============================================================
 root = ctk.CTk()
 root.title("Digitador Automático")
-root.geometry("640x500")
+root.geometry("640x580")
 root.resizable(False, False)
 
-# Cabeçalho
+# --- Cabeçalho ---
 header_frame = ctk.CTkFrame(root, fg_color="transparent")
 header_frame.pack(fill="x", padx=20, pady=(20, 0))
 
@@ -149,7 +216,7 @@ tema_btn = ctk.CTkButton(
 )
 tema_btn.pack(side="right")
 
-# Label da caixa de texto
+# --- Caixa de texto ---
 ctk.CTkLabel(
     root,
     text="Texto a ser digitado:",
@@ -157,10 +224,9 @@ ctk.CTkLabel(
     anchor="w"
 ).pack(fill="x", padx=20, pady=(15, 4))
 
-# Caixa de texto
 text_box = ctk.CTkTextbox(
     root,
-    height=200,
+    height=180,
     font=ctk.CTkFont(size=13),
     corner_radius=10,
     border_width=1,
@@ -169,9 +235,9 @@ text_box.pack(fill="both", expand=True, padx=20)
 text_box.bind("<Control-a>", selecionar_tudo)
 text_box.bind("<Control-A>", selecionar_tudo)
 
-# Botões
+# --- Botões ---
 frame_botoes = ctk.CTkFrame(root, fg_color="transparent")
-frame_botoes.pack(pady=15)
+frame_botoes.pack(pady=12)
 
 botao_iniciar = ctk.CTkButton(
     frame_botoes,
@@ -211,12 +277,34 @@ botao_limpar = ctk.CTkButton(
 )
 botao_limpar.pack(side="left", padx=8)
 
-# Barra de progresso
+# --- Painel de métricas ---
+metrics_frame = ctk.CTkFrame(root, corner_radius=10)
+metrics_frame.pack(fill="x", padx=20, pady=(0, 10))
+
+def criar_metrica(parent, col, titulo_txt):
+    cell = ctk.CTkFrame(parent, fg_color="transparent")
+    cell.grid(row=0, column=col, padx=16, pady=8, sticky="nsew")
+    parent.columnconfigure(col, weight=1)
+    ctk.CTkLabel(cell, text=titulo_txt,
+                 font=ctk.CTkFont(size=11), text_color="#888888").pack()
+    val = ctk.CTkLabel(cell, text="—",
+                       font=ctk.CTkFont(size=13, weight="bold"))
+    val.pack()
+    return val
+
+lbl_chars_val     = criar_metrica(metrics_frame, 0, "Caracteres")
+lbl_linhas_val    = criar_metrica(metrics_frame, 1, "Linhas")
+lbl_palavras_val  = criar_metrica(metrics_frame, 2, "Palavras")
+lbl_decorrido_val = criar_metrica(metrics_frame, 3, "Decorrido")
+lbl_restante_val  = criar_metrica(metrics_frame, 4, "Restante")
+lbl_velocidade_val= criar_metrica(metrics_frame, 5, "Velocidade")
+
+# --- Barra de progresso ---
 progress_bar = ctk.CTkProgressBar(root, width=600, height=10, corner_radius=5)
 progress_bar.pack(padx=20, pady=(0, 8))
 progress_bar.set(0)
 
-# Rodapé de status
+# --- Status ---
 status_frame = ctk.CTkFrame(root, fg_color="transparent")
 status_frame.pack()
 
