@@ -24,6 +24,7 @@ def iniciar_digitacao():
     cancelar_evento.clear()
     botao_iniciar.configure(state="disabled")
     botao_cancelar.configure(state="normal")
+    text_box.configure(state="disabled")   # bloqueia edição do campo durante a digitação
     progress_bar.set(0)
     atualizar_status("aguardando")
 
@@ -74,6 +75,7 @@ def iniciar_digitacao():
             atualizar_status("erro")
 
         finally:
+            text_box.configure(state="normal")     # reabilita o campo de texto
             botao_iniciar.configure(state="normal")
             botao_cancelar.configure(state="disabled")
 
