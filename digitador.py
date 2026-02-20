@@ -168,6 +168,19 @@ def selecionar_tudo(event):
     return "break"
 
 
+def on_texto_alterado(event=None):
+    """Atualiza prévia de Chars, Linhas e Palavras conforme o texto é editado."""
+    texto = text_box.get("1.0", "end").rstrip()
+    if texto:
+        lbl_chars_val.configure(text=fmt_num(len(texto)))
+        lbl_linhas_val.configure(text=str(texto.count('\n') + 1))
+        lbl_palavras_val.configure(text=str(len(texto.split())))
+    else:
+        for lbl in (lbl_chars_val, lbl_linhas_val, lbl_palavras_val):
+            lbl.configure(text="—")
+    text_box._textbox.edit_modified(False)  # reseta flag para próximo evento
+
+
 def limpar_texto():
     text_box.delete("1.0", "end")
     progress_bar.set(0)
@@ -234,6 +247,7 @@ text_box = ctk.CTkTextbox(
 text_box.pack(fill="both", expand=True, padx=20)
 text_box.bind("<Control-a>", selecionar_tudo)
 text_box.bind("<Control-A>", selecionar_tudo)
+text_box._textbox.bind("<<Modified>>", on_texto_alterado)
 
 # --- Botões ---
 frame_botoes = ctk.CTkFrame(root, fg_color="transparent")
