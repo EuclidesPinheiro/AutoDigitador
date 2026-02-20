@@ -33,17 +33,23 @@ O programa é um arquivo único sem classes. Segue o padrão:
 
 ```
 iniciar_digitacao()
+  ├── Desabilita CTkTextbox (state="disabled")
   └── Thread: digitar()
-        ├── Fase 1: contagem regressiva (0 → 80% da progress bar)
+        ├── Fase 1: contagem regressiva (0 → 100% da progress bar)
         └── Fase 2: loop caractere por caractere
               ├── '\n' → send('enter') + limpa auto-indent (home + shift+end + delete)
               ├── '\t' → send('tab')
               └── outros → keyboard.write(char)
+        └── finally: reabilita CTkTextbox (state="normal")
 ```
 
 ### Controle de cancelamento
 
 Usa `threading.Event` (`cancelar_evento`). A thread verifica `cancelar_evento.is_set()` a cada iteração do loop de digitação e no início de cada segundo do countdown.
+
+### Comportamento da janela durante digitação
+
+O `CTkTextbox` é desabilitado (`state="disabled"`) enquanto a digitação está em andamento. Isso impede que o campo de texto capture eventos de teclado acidentalmente caso o usuário abra a janela do programa para acompanhar o progresso. A janela se comporta normalmente (ícone visível, pode ser aberta/minimizada); se ganhar foco do teclado, a digitação no destino é pausada até o usuário retornar o foco à aplicação destino.
 
 ## Decisões técnicas importantes
 
@@ -51,6 +57,7 @@ Usa `threading.Event` (`cancelar_evento`). A thread verifica `cancelar_evento.is
 - **`keyboard` em vez de `pyperclip + Ctrl+V`** — a abordagem de clipboard apresentou instabilidade (apenas 1 caractere colado em alguns contextos)
 - **Limpeza de auto-indent após `\n`** — aplicações destino com auto-indent (IDEs, editores) inserem espaços/tabs após Enter; a sequência `home → shift+end → delete` remove isso antes de continuar a digitação
 - **Thread daemon** — garante que o processo encerra junto com a janela principal mesmo se a digitação estiver em andamento
+- **`WS_EX_NOACTIVATE` foi descartado** — tentativa anterior de impedir roubo de foco via ctypes causou sumiço do ícone da janela na barra de tarefas; solução adotada foi apenas desabilitar o CTkTextbox durante a digitação
 
 ## Convenções do código
 
@@ -79,6 +86,7 @@ pip install customtkinter keyboard
 - Não remover a limpeza de auto-indent após `\n` — causa indentação acumulada
 - Não chamar `root.destroy()` ou `root.quit()` de dentro da thread de digitação
 - Não usar `time.sleep()` na thread principal — trava a UI
+- Não aplicar `WS_EX_NOACTIVATE` via ctypes — causa sumiço do ícone na barra de tarefas do Windows
 
 ## Repositório
 
