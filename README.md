@@ -44,9 +44,15 @@ Ferramenta desktop para digitação automática de texto em qualquer aplicação
 
 4. Você tem **5 segundos** para clicar no campo de destino onde o texto será digitado
 
-5. Aguarde a conclusão — a barra de progresso indica o andamento
+5. Aguarde a conclusão — a barra de progresso indica o andamento em tempo real
 
 > Para interromper a digitação a qualquer momento, clique em **✕ Cancelar**
+
+## Acompanhando o progresso
+
+Durante a digitação é possível abrir a janela do programa para acompanhar a barra de progresso e o status sem interromper o processo. O campo de texto fica bloqueado enquanto a digitação está em andamento para evitar edições acidentais.
+
+> **Atenção:** se a janela do AutoDigitador ganhar foco do teclado, a digitação no destino é pausada. Basta clicar de volta na aba ou campo destino para retomar.
 
 ## Dependências
 
