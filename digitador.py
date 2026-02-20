@@ -104,11 +104,20 @@ def selecionar_tudo(event):
     return "break"
 
 
+def limpar_texto():
+    text_box.delete("1.0", "end")
+    progress_bar.set(0)
+    atualizar_status("aguardando")
+
+
 def alternar_tema():
     modo_atual = ctk.get_appearance_mode()
     novo_modo = "light" if modo_atual == "Dark" else "dark"
     ctk.set_appearance_mode(novo_modo)
-    tema_btn.configure(text="☀ Tema Claro" if novo_modo == "dark" else "☾ Tema Escuro")
+    if novo_modo == "dark":
+        tema_btn.configure(text="☀ Tema Claro", text_color="white")
+    else:
+        tema_btn.configure(text="☾ Tema Escuro", text_color="#1a1a1a")
 
 
 # --- Interface ---
@@ -188,6 +197,19 @@ botao_cancelar = ctk.CTkButton(
     command=cancelar_digitacao
 )
 botao_cancelar.pack(side="left", padx=8)
+
+botao_limpar = ctk.CTkButton(
+    frame_botoes,
+    text="🗑  Limpar",
+    width=120,
+    height=40,
+    font=ctk.CTkFont(size=14),
+    corner_radius=10,
+    fg_color="#555555",
+    hover_color="#333333",
+    command=limpar_texto
+)
+botao_limpar.pack(side="left", padx=8)
 
 # Barra de progresso
 progress_bar = ctk.CTkProgressBar(root, width=600, height=10, corner_radius=5)
