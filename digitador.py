@@ -76,6 +76,8 @@ def iniciar_digitacao():
             start_time        = time.time()
             ultima_atualizacao = 0.0
 
+            intervalo = 1.0 / max(float(slider_velocidade.get()), 1)
+
             for idx, char in enumerate(texto):
                 if cancelar_evento.is_set():
                     atualizar_status("cancelado")
@@ -101,14 +103,14 @@ def iniciar_digitacao():
                     em_palavra = True
                     keyboard.write(char)
 
-                time.sleep(INTERVALO)
+                time.sleep(intervalo)
                 progress_bar.set((idx + 1) / total)
 
                 # --- Atualiza métricas a cada 100ms ---
                 agora = time.time()
                 if agora - ultima_atualizacao >= 0.1:
                     elapsed   = agora - start_time
-                    remaining = (total - idx - 1) * INTERVALO
+                    remaining = (total - idx - 1) * intervalo
                     speed     = (idx + 1) / elapsed * 60 if elapsed > 0.1 else 0
 
                     lbl_chars_val.configure(text=f"{fmt_num(idx + 1)} / {fmt_num(total)}")
@@ -188,6 +190,11 @@ def limpar_texto():
     atualizar_status("aguardando")
 
 
+def on_slider_velocidade(valor):
+    chars_s = int(float(valor))
+    lbl_slider_vel.configure(text=f"{chars_s} chars/s")
+
+
 def alternar_tema():
     modo_atual = ctk.get_appearance_mode()
     novo_modo = "light" if modo_atual == "Dark" else "dark"
@@ -203,7 +210,7 @@ def alternar_tema():
 # ============================================================
 root = ctk.CTk()
 root.title("Digitador Automático")
-root.geometry("640x580")
+root.geometry("640x630")
 root.resizable(False, False)
 
 # --- Cabeçalho ---
@@ -290,6 +297,29 @@ botao_limpar = ctk.CTkButton(
     command=limpar_texto
 )
 botao_limpar.pack(side="left", padx=8)
+
+# --- Slider de velocidade ---
+frame_slider = ctk.CTkFrame(root, fg_color="transparent")
+frame_slider.pack(fill="x", padx=24, pady=(0, 8))
+
+ctk.CTkLabel(frame_slider, text="Velocidade:",
+             font=ctk.CTkFont(size=12)).pack(side="left", padx=(0, 8))
+
+ctk.CTkLabel(frame_slider, text="Lento",
+             font=ctk.CTkFont(size=11), text_color="#888888").pack(side="left")
+
+slider_velocidade = ctk.CTkSlider(frame_slider, from_=5, to=200,
+                                   number_of_steps=195, width=340,
+                                   command=on_slider_velocidade)
+slider_velocidade.set(33)
+slider_velocidade.pack(side="left", padx=6)
+
+ctk.CTkLabel(frame_slider, text="Rápido",
+             font=ctk.CTkFont(size=11), text_color="#888888").pack(side="left")
+
+lbl_slider_vel = ctk.CTkLabel(frame_slider, text="33 chars/s",
+                               font=ctk.CTkFont(size=12, weight="bold"), width=90)
+lbl_slider_vel.pack(side="left", padx=(10, 0))
 
 # --- Painel de métricas ---
 metrics_frame = ctk.CTkFrame(root, corner_radius=10)
