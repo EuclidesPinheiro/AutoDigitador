@@ -90,10 +90,6 @@ def iniciar_digitacao():
                         palavras_digitadas += 1
                         em_palavra = False
                     keyboard.send('enter')
-                    time.sleep(0.05)
-                    keyboard.send('home')
-                    keyboard.send('shift+end')
-                    keyboard.send('delete')
                 elif char in (' ', '\t'):
                     if em_palavra:
                         palavras_digitadas += 1
@@ -209,7 +205,7 @@ def alternar_tema():
 # --- Interface ---
 # ============================================================
 root = ctk.CTk()
-root.title("Digitador Automático")
+root.title("AutoDigitador")
 root.geometry("640x630")
 root.resizable(False, False)
 
@@ -219,7 +215,7 @@ header_frame.pack(fill="x", padx=20, pady=(20, 0))
 
 titulo = ctk.CTkLabel(
     header_frame,
-    text="Digitador Automático",
+    text="AutoDigitador",
     font=ctk.CTkFont(size=22, weight="bold")
 )
 titulo.pack(side="left")
