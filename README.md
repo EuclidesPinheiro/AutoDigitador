@@ -32,7 +32,7 @@ Ferramenta desktop para digitação automática de texto em qualquer aplicação
 
 2. Instale as dependências:
    ```bash
-   pip install customtkinter keyboard
+   pip install -r requirements.txt
    ```
 
 ## Como usar
