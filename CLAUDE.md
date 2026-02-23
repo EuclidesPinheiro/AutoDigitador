@@ -8,8 +8,12 @@ Aplicação desktop Windows para digitação automática de texto em qualquer ca
 
 ```
 DIGITADOR/
-└── digitador.py   # arquivo único com toda a lógica e interface
+├── AutoDigitador.py   # arquivo principal — versão atual com toda a lógica e interface
+├── Digitador2.py      # versão intermediária (customtkinter + pyautogui, OOP) — legada
+└── digitador.py       # versão inicial (tkinter + pyautogui, procedural) — legada
 ```
+
+O arquivo ativo e mantido é `AutoDigitador.py`. Os demais são históricos e não devem ser modificados.
 
 ## Stack e bibliotecas
 
@@ -69,9 +73,9 @@ O `CTkTextbox` é desabilitado (`state="disabled"`) enquanto a digitação está
 ## Como executar
 
 ```bash
-python digitador.py
+python AutoDigitador.py
 # ou sem console:
-pythonw digitador.py
+pythonw AutoDigitador.py
 ```
 
 ## Dependências — instalação

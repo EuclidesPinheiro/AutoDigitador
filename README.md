@@ -8,7 +8,11 @@ Ferramenta desktop para digitação automática de texto em qualquer aplicação
 - **Suporte completo a acentos e caracteres especiais** (`ã`, `é`, `ç`, etc.)
 - **Contagem regressiva de 5 segundos** para o usuário posicionar o cursor no destino
 - **Barra de progresso em tempo real** acompanhando o avanço da digitação
+- **Painel de métricas** com caracteres, linhas, palavras, tempo decorrido, tempo restante e velocidade
+- **Prévia de Chars/Linhas/Palavras** atualizada enquanto o texto é digitado ou colado
+- **Ajuste de velocidade** via slider de 5 a 200 chars/s
 - **Botão Cancelar** para interromper a qualquer momento
+- **Botão Limpar** para apagar o texto e resetar as métricas
 - **Correção de auto-indent** — remove indentação automática inserida pela aplicação destino após quebras de linha
 - **Alternância de tema** claro/escuro
 - **Atalho Ctrl+A** para selecionar todo o texto na caixa de entrada
@@ -35,7 +39,7 @@ Ferramenta desktop para digitação automática de texto em qualquer aplicação
 
 1. Execute o programa:
    ```bash
-   python digitador.py
+   python AutoDigitador.py
    ```
 
 2. Cole ou digite o texto desejado na caixa de entrada

@@ -90,6 +90,10 @@ def iniciar_digitacao():
                         palavras_digitadas += 1
                         em_palavra = False
                     keyboard.send('enter')
+                    time.sleep(0.05)  # aguarda auto-indent do destino
+                    keyboard.send('home')
+                    keyboard.send('shift+end')
+                    keyboard.send('delete')
                 elif char in (' ', '\t'):
                     if em_palavra:
                         palavras_digitadas += 1
