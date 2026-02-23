@@ -8,8 +8,7 @@ import threading
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-DELAY = 5         # segundos de espera antes de digitar
-INTERVALO = 0.03  # intervalo entre caracteres em segundos
+DELAY = 5  # segundos de espera antes de digitar
 
 cancelar_evento = threading.Event()
 
@@ -76,8 +75,6 @@ def iniciar_digitacao():
             start_time        = time.time()
             ultima_atualizacao = 0.0
 
-            intervalo = 1.0 / max(float(slider_velocidade.get()), 1)
-
             for idx, char in enumerate(texto):
                 if cancelar_evento.is_set():
                     atualizar_status("cancelado")
@@ -90,10 +87,11 @@ def iniciar_digitacao():
                         palavras_digitadas += 1
                         em_palavra = False
                     keyboard.send('enter')
-                    time.sleep(0.05)  # aguarda auto-indent do destino
-                    keyboard.send('home')
-                    keyboard.send('shift+end')
-                    keyboard.send('delete')
+                    if limpar_indent.get():
+                        time.sleep(0.05)
+                        keyboard.send('home')
+                        keyboard.send('shift+end')
+                        keyboard.send('delete')
                 elif char in (' ', '\t'):
                     if em_palavra:
                         palavras_digitadas += 1
@@ -103,6 +101,7 @@ def iniciar_digitacao():
                     em_palavra = True
                     keyboard.write(char)
 
+                intervalo = slider_intervalo.get() / 1000
                 time.sleep(intervalo)
                 progress_bar.set((idx + 1) / total)
 
@@ -170,29 +169,11 @@ def selecionar_tudo(event):
     return "break"
 
 
-def on_texto_alterado(event=None):
-    """Atualiza prévia de Chars, Linhas e Palavras conforme o texto é editado."""
-    texto = text_box.get("1.0", "end").rstrip()
-    if texto:
-        lbl_chars_val.configure(text=fmt_num(len(texto)))
-        lbl_linhas_val.configure(text=str(texto.count('\n') + 1))
-        lbl_palavras_val.configure(text=str(len(texto.split())))
-    else:
-        for lbl in (lbl_chars_val, lbl_linhas_val, lbl_palavras_val):
-            lbl.configure(text="—")
-    text_box._textbox.edit_modified(False)  # reseta flag para próximo evento
-
-
 def limpar_texto():
     text_box.delete("1.0", "end")
     progress_bar.set(0)
     resetar_metricas()
     atualizar_status("aguardando")
-
-
-def on_slider_velocidade(valor):
-    chars_s = int(float(valor))
-    lbl_slider_vel.configure(text=f"{chars_s} chars/s")
 
 
 def alternar_tema():
@@ -209,8 +190,8 @@ def alternar_tema():
 # --- Interface ---
 # ============================================================
 root = ctk.CTk()
-root.title("AutoDigitador")
-root.geometry("640x630")
+root.title("Digitador Automático")
+root.geometry("640x615")
 root.resizable(False, False)
 
 # --- Cabeçalho ---
@@ -219,7 +200,7 @@ header_frame.pack(fill="x", padx=20, pady=(20, 0))
 
 titulo = ctk.CTkLabel(
     header_frame,
-    text="AutoDigitador",
+    text="Digitador Automático",
     font=ctk.CTkFont(size=22, weight="bold")
 )
 titulo.pack(side="left")
@@ -254,7 +235,6 @@ text_box = ctk.CTkTextbox(
 text_box.pack(fill="both", expand=True, padx=20)
 text_box.bind("<Control-a>", selecionar_tudo)
 text_box.bind("<Control-A>", selecionar_tudo)
-text_box._textbox.bind("<<Modified>>", on_texto_alterado)
 
 # --- Botões ---
 frame_botoes = ctk.CTkFrame(root, fg_color="transparent")
@@ -298,28 +278,46 @@ botao_limpar = ctk.CTkButton(
 )
 botao_limpar.pack(side="left", padx=8)
 
-# --- Slider de velocidade ---
-frame_slider = ctk.CTkFrame(root, fg_color="transparent")
-frame_slider.pack(fill="x", padx=24, pady=(0, 8))
+# --- Opções ---
+frame_opcoes = ctk.CTkFrame(root, fg_color="transparent")
+frame_opcoes.pack(pady=(0, 4))
 
-ctk.CTkLabel(frame_slider, text="Velocidade:",
-             font=ctk.CTkFont(size=12)).pack(side="left", padx=(0, 8))
+limpar_indent = ctk.BooleanVar(value=False)
+chk_indent = ctk.CTkCheckBox(
+    frame_opcoes,
+    text="Limpar auto-indent (apenas para IDEs)",
+    variable=limpar_indent,
+    font=ctk.CTkFont(size=12),
+)
+chk_indent.pack(pady=(0, 6))
 
-ctk.CTkLabel(frame_slider, text="Lento",
-             font=ctk.CTkFont(size=11), text_color="#888888").pack(side="left")
+frame_slider = ctk.CTkFrame(frame_opcoes, fg_color="transparent")
+frame_slider.pack()
 
-slider_velocidade = ctk.CTkSlider(frame_slider, from_=5, to=200,
-                                   number_of_steps=195, width=340,
-                                   command=on_slider_velocidade)
-slider_velocidade.set(33)
-slider_velocidade.pack(side="left", padx=6)
+ctk.CTkLabel(
+    frame_slider,
+    text="Intervalo entre teclas:",
+    font=ctk.CTkFont(size=12),
+).pack(side="left", padx=(0, 8))
 
-ctk.CTkLabel(frame_slider, text="Rápido",
-             font=ctk.CTkFont(size=11), text_color="#888888").pack(side="left")
-
-lbl_slider_vel = ctk.CTkLabel(frame_slider, text="33 chars/s",
-                               font=ctk.CTkFont(size=12, weight="bold"), width=90)
-lbl_slider_vel.pack(side="left", padx=(10, 0))
+lbl_intervalo_val = ctk.CTkLabel(
+    frame_slider,
+    text="30 ms",
+    font=ctk.CTkFont(size=12, weight="bold"),
+    width=55,
+    anchor="w",
+)
+slider_intervalo = ctk.CTkSlider(
+    frame_slider,
+    from_=20,
+    to=500,
+    number_of_steps=48,
+    width=220,
+    command=lambda val: lbl_intervalo_val.configure(text=f"{int(val)} ms"),
+)
+slider_intervalo.set(30)
+slider_intervalo.pack(side="left", padx=4)
+lbl_intervalo_val.pack(side="left", padx=(4, 0))
 
 # --- Painel de métricas ---
 metrics_frame = ctk.CTkFrame(root, corner_radius=10)
